@@ -389,7 +389,8 @@ button:focus-visible{outline:3px solid var(--oro);outline-offset:2px;}
 <section class="doc oculto" id="nivel-6">
   <div class="doc-num">Prueba 6 de 15 · Documentos triturados</div>
   <h2>Los anagramas del banquete</h2>
-  <p>Alguien pasó por la trituradora siete palabras clave del enlace. Reconstruidlas. En cada palabra reconstruida, quedaos con la letra cuya posición se indica. Las siete letras, en orden, forman la <b>palabra maestra</b> que debéis escribir abajo.</p>
+  <p>Alguien pasó por la trituradora siete palabras clave del enlace. En cada línea hay una palabra <b>relacionada con la boda</b> con las letras desordenadas. Primero, <b>reordenad las letras</b> para reconstruir la palabra. Después, de esa palabra ya ordenada, <b>quedaos con la letra de la posición que se indica</b>. Las siete letras, en orden, forman la <b>palabra maestra</b> que debéis escribir abajo.</p>
+  <p style="font-size:.85rem;"><b>Ejemplo:</b> si os diéramos «TARTA → letra 2ª», reordenáis... bueno, TARTA ya está en orden, listillos. La letra 2ª sería la A.</p>
   <ul>
     <li><b>TRALA</b> → letra 1ª</li>
     <li><b>NALU</b> → letra 2ª</li>
@@ -610,6 +611,36 @@ const digitosFrag = CODIGO_FINAL.split(""); // 🕊️=d0, 💍=d1, 🥂=d2, �
 const PRUEBAS_CON_FRAGMENTO = {2:0, 4:1, 6:2, 12:3}; // prueba → índice en REPARTO
 const TOTAL_PRUEBAS = 15;
 
+
+let audioCtx = null;
+/* ===================================================== SONIDOS */
+function sfxTono(freq, dur, tipo, gan, cuando){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    const t = audioCtx.currentTime + (cuando||0);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = tipo||"triangle"; o.frequency.value = freq;
+    g.gain.setValueAtTime(gan||.15, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur);
+  }catch(e){}
+}
+function sfxClick(){ sfxTono(620,.05,"square",.06); }
+function sfxTick(){ sfxTono(1150,.04,"sine",.08); }
+function sfxAcierto(){ sfxTono(523,.11,"triangle",.16); sfxTono(659,.11,"triangle",.16,.09); sfxTono(784,.2,"triangle",.16,.18); }
+function sfxError(){ sfxTono(220,.13,"sawtooth",.1); sfxTono(155,.22,"sawtooth",.1,.11); }
+function sfxBlipMal(){ sfxTono(180,.06,"square",.05); }
+function sfxSello(){ sfxTono(90,.18,"sine",.35); sfxTono(60,.22,"sine",.3,.02); }
+function sfxFragmento(){ [784,988,1319,1568].forEach((f,i)=>sfxTono(f,.14,"sine",.14,i*.09)); }
+function sfxFanfarria(){
+  [[523,0],[659,.14],[784,.28],[1047,.42],[784,.62],[1047,.76],[1319,.9]].forEach(([f,t])=>sfxTono(f,.3,"triangle",.18,t));
+  [[131,0],[196,.42],[262,.9]].forEach(([f,t])=>sfxTono(f,.5,"sine",.2,t));
+}
+// Tic genérico en todos los botones
+document.addEventListener("click", e=>{ if(e.target.closest("button")) sfxClick(); }, true);
+
 /* ===================================================== UTILIDADES */
 const $ = id => document.getElementById(id);
 function norm(s){
@@ -653,11 +684,13 @@ setInterval(()=>{
 function superarNivel(n){
   const sello = $("sello-"+n);
   if(sello) sello.classList.add("estampar");
+  sfxSello();
   const frIdx = PRUEBAS_CON_FRAGMENTO[n];
   if(frIdx !== undefined){
     const simboloIdx = REPARTO[frIdx];
     const frag = document.createElement("div");
     frag.className = "fragmento";
+    sfxFragmento();
     frag.innerHTML = SIMBOLOS[simboloIdx] + ' <span class="digito">' + digitosFrag[simboloIdx] + '</span>';
     $("fb-"+n).after(frag);
     const aviso = document.createElement("p");
@@ -684,11 +717,13 @@ function comprobar(n){
   const v = norm($("resp-"+n).value);
   const fb = $("fb-"+n);
   if(RESPUESTAS[n].map(norm).includes(v)){
+    sfxAcierto();
     fb.textContent = "✔ CORRECTO. Prueba superada.";
     fb.className = "feedback bien";
     document.querySelectorAll("#nivel-"+n+" button").forEach(b=>{ if(b.textContent.indexOf("→")===-1) b.disabled = true; });
     superarNivel(n);
   } else {
+    sfxError();
     fb.textContent = ["✘ Denegado. Volved a intentarlo.","✘ Frío, frío.","✘ El expediente se ríe de vosotros.","✘ Ni de lejos. ¿Habéis probado a pensar?"][Math.floor(Math.random()*4)];
     fb.className = "feedback mal";
   }
@@ -701,6 +736,7 @@ function reanudar(){
   if(idx === -1){ fb.textContent = "✘ Código de rescate no reconocido."; fb.className = "feedback mal"; return; }
   if(!inicio) inicio = Date.now();
   const nivelDestino = idx + 2;
+  sfxAcierto();
   fb.textContent = "✔ Expediente reabierto. (Si perdisteis los fragmentos apuntados, repetid las pruebas con fragmento (2, 4, 6 y 12)... o llorad.)";
   fb.className = "feedback bien";
   setTimeout(()=>mostrarNivel(nivelDestino), 900);
@@ -731,19 +767,21 @@ function montarAnillos(){
       if(marcados.has(i)){ marcados.delete(i); celda.classList.remove("marcada"); }
       else if(marcados.size < 6){ marcados.add(i); celda.classList.add("marcada"); }
       $("cont-anillos").textContent = marcados.size;
+      sfxTick();
     };
     grid.appendChild(celda);
   }
 }
 function verificarAnillos(){
   const fb = $("fb-3");
-  if(marcados.size !== 6){ fb.textContent = "✘ Tenéis que marcar exactamente 6."; fb.className = "feedback mal"; return; }
+  if(marcados.size !== 6){ sfxError(); fb.textContent = "✘ Tenéis que marcar exactamente 6."; fb.className = "feedback mal"; return; }
   const aciertos = [...marcados].filter(i=>impostores.has(i)).length;
   if(aciertos === 6){
     fb.textContent = "✔ Los 6 impostores, detenidos. Peritaje impecable.";
     fb.className = "feedback bien";
     superarNivel(3);
   } else {
+    sfxError();
     fb.textContent = `✘ Solo ${aciertos} de 6 son impostores reales. Los honrados os denunciarán por difamación.`;
     fb.className = "feedback mal";
   }
@@ -752,7 +790,6 @@ function verificarAnillos(){
 /* ===================================================== PRUEBA 5: SIMON (15 rondas) */
 const SIMON_META = 15;
 let simonSec = [], simonPos = 0, simonRonda = 0, simonEscuchando = false;
-let audioCtx = null;
 const FRECS = [329.6, 415.3, 493.9, 587.3];
 function bip(c, dur=280){
   try{
@@ -814,6 +851,7 @@ document.querySelectorAll(".copa").forEach(copa=>{
       }
     } else {
       simonEscuchando = false;
+      sfxError();
       $("fb-5").textContent = "✘ ¡Brindis fallido! Nueva secuencia. Desde cero.";
       $("fb-5").className = "feedback centro mal";
       $("simon-estado").textContent = `Ronda 0 / ${SIMON_META}`;
@@ -870,6 +908,7 @@ function pzPintar(){
       if(pzVecinos(h).includes(pos)){
         [pzEstado[h], pzEstado[pos]] = [pzEstado[pos], pzEstado[h]];
         pzMovs++;
+        sfxTick();
         $("mov-puzzle").textContent = "Movimientos: " + pzMovs;
         pzPintar();
         pzComprobar();
@@ -919,14 +958,17 @@ function comprobarFinal(){
     intentosFinal++;
     if(intentosFinal % 3 === 0){
       bloqueoFinal = ahora + 60000;
+      sfxError();
       fb.textContent = "✘ Tres fallos. 60 segundos de reflexión. Mirad la cabecera. MIRADLA.";
     } else {
+      sfxError();
       fb.textContent = "✘ El candado ni se inmuta.";
     }
     fb.className = "feedback mal";
   }
 }
 function finDelJuego(){
+  sfxFanfarria();
   $("codigo-final-vista").textContent = CODIGO_FINAL.split("").join(" ");
   const s = Math.floor((Date.now()-inicio)/1000);
   $("tiempo-final").textContent = `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}min`;
@@ -1001,6 +1043,7 @@ function montarWally(){
   lienzo.appendChild(frag);
 }
 function clickErroneo(){
+  sfxBlipMal();
   wFallos++;
   document.getElementById("w-fallos").textContent = wFallos;
   const fb = document.getElementById("fb-wally");
@@ -1012,6 +1055,7 @@ function clickErroneo(){
 function encontrarObjetivo(el, obj){
   if(el.classList.contains("objetivo-hallado")) return;
   el.classList.add("objetivo-hallado");
+  sfxAcierto();
   const chip = document.getElementById(obj.etiqueta);
   chip.classList.add("hallado");
   chip.textContent = obj.emoji + " " + obj.nombre;
@@ -1132,6 +1176,7 @@ function serBucle(){
   serRAF = requestAnimationFrame(serBucle);
 }
 function serNotaSuperada(){
+  sfxAcierto();
   document.getElementById("r"+serRonda).classList.add("ok");
   serRonda++; serAcumulado = 0;
   if(serRonda >= SER_NOTAS.length){
@@ -1209,6 +1254,7 @@ function sopaClick(f, c, el){
   if(sopaPrimera === null){
     sopaPrimera = [f,c];
     el.classList.add("pre");
+    sfxTick();
     return;
   }
   const [f1,c1] = sopaPrimera;
@@ -1217,11 +1263,12 @@ function sopaClick(f, c, el){
   if(f1===f && c1===c) return;
   const celdas = sopaCeldas(f1,c1,f,c);
   const fb = document.getElementById("fb-sopa");
-  if(!celdas){ fb.textContent = "✘ Eso no es una línea recta ni con buena voluntad."; fb.className = "feedback centro mal"; return; }
+  if(!celdas){ sfxError(); fb.textContent = "✘ Eso no es una línea recta ni con buena voluntad."; fb.className = "feedback centro mal"; return; }
   const palabra = celdas.map(([a,b])=>SOPA_GRID[a][b]).join("");
   const reversa = palabra.split("").reverse().join("");
   const trampa = SOPA_TRAMPAS.find(p=>p===palabra || p===reversa);
   if(trampa){
+    sfxError();
     fb.textContent = "✘ ¿" + trampa + "? Bonito viaje... LÁSTIMA QUE NUNCA LO HICIERAIS JUNTOS. El expediente lo sabe todo.";
     fb.className = "feedback centro mal";
     return;
@@ -1229,6 +1276,7 @@ function sopaClick(f, c, el){
   const hallada = SOPA_CIUDADES.find(p=>p===palabra || p===reversa);
   if(hallada && !sopaHalladas.has(hallada)){
     sopaHalladas.add(hallada);
+    sfxAcierto();
     celdas.forEach(([a,b])=>{
       grid.querySelector('[data-f="'+a+'"][data-c="'+b+'"]').classList.add("encontrada");
     });
@@ -1247,6 +1295,7 @@ function sopaClick(f, c, el){
     fb.textContent = "Ese lugar ya está en el registro.";
     fb.className = "feedback centro";
   } else {
+    sfxError();
     fb.textContent = "✘ " + palabra + " no es ningún sitio en el que hayáis estado. Que sepamos.";
     fb.className = "feedback centro mal";
   }
@@ -1292,6 +1341,7 @@ function difClick(e){
   const fb = document.getElementById("fb-dif");
   if(acierto >= 0){
     difHalladas.add(acierto);
+    sfxAcierto();
     ["dif-A","dif-B"].forEach(id=>{
       const m = document.createElement("div");
       m.className = "dif-marca";
@@ -1309,6 +1359,7 @@ function difClick(e){
       fb.className = "feedback centro bien";
     }
   } else {
+    sfxError();
     fb.textContent = "✘ Ahí las dos fotos son igual de sospechosas. Seguid buscando.";
     fb.className = "feedback centro mal";
   }
