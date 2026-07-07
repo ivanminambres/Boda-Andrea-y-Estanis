@@ -107,6 +107,13 @@ header{
   font-family:'Special Elite';font-size:.8rem;color:var(--lacre);
   transform:rotate(-1.2deg);display:inline-block;margin-bottom:14px;
 }
+/* Variante para acertijos largos: verso a verso, alineado a la izquierda */
+.cifrado.acertijo{
+  text-align:left;letter-spacing:.04em;line-height:1.7;
+  font-size:clamp(.92rem,3.4vw,1.15rem);padding:22px 26px;
+}
+.cifrado.acertijo .verso{display:block;margin-bottom:12px;}
+.cifrado.acertijo .verso:last-child{margin-bottom:0;margin-top:16px;text-align:center;font-weight:bold;letter-spacing:.15em;}
 
 /* ---------- CONTROLES ---------- */
 .fila-input{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
@@ -281,6 +288,9 @@ button:focus-visible{outline:3px solid var(--oro);outline-offset:2px;}
 .doc.animar > *:nth-child(7){animation-delay:.47s;}
 .doc.animar > *:nth-child(n+8){animation-delay:.54s;}
 @keyframes subir{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+/* El sello de PRUEBA SUPERADA queda FUERA de la entrada escalonada (debe permanecer invisible) */
+.doc.animar > .sello-grande{animation:none;opacity:0;}
+.doc.animar > .sello-grande.estampar{animation:estampa .45s cubic-bezier(.2,2.5,.4,1) forwards;}
 
 /* Subrayado del título que se dibuja al entrar */
 .doc h2{border-bottom:none;position:relative;}
@@ -370,7 +380,12 @@ button:not(.secundario):hover::after{left:130%;}
   <div class="doc-num">Prueba 1 de 15 · Interrogatorio de entrada</div>
   <h2>El acertijo del umbral</h2>
   <p>Antes de entrar en el expediente, demostrad que pensáis como una sola mente (o al menos como mente y media):</p>
-  <div class="cifrado">«No soy una puerta, pero abro un antes y un después.<br>No soy un camino, pero lo recorreréis acompañados.<br>No tengo fecha de caducidad, pero prometo regalaros felicidad.<br>¿Qué soy?»</div>
+  <div class="cifrado acertijo">
+    <span class="verso">«No soy una puerta, pero abro un antes y un después.</span>
+    <span class="verso">No soy un camino, pero lo recorreréis acompañados.</span>
+    <span class="verso">No tengo fecha de caducidad, pero prometo regalaros felicidad.»</span>
+    <span class="verso">¿QUÉ SOY?</span>
+  </div>
   <div class="fila-input">
     <input type="text" id="resp-1" placeholder="VUESTRA RESPUESTA" aria-label="Respuesta prueba 1">
     <button onclick="comprobar(1)">Presentar declaración</button>
