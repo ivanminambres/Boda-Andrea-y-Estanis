@@ -359,7 +359,7 @@ button:not(.secundario):hover::after{left:130%;}
 <div id="app">
 
 <header>
-  <div class="hdr-title">Operación Candado<small>Expediente nupcial 11-VII · Estanis &amp; Andrea</small></div>
+  <div class="hdr-title" onclick="mostrarNivel(0)" style="cursor:pointer;" title="Volver al inicio">Operación Candado<small>Expediente nupcial 11-VII · Estanis &amp; Andrea</small></div>
   <div class="hdr-symbols" title="Escudo del expediente">💍 🥂 ✨</div>
   <div class="hdr-meta"><span>ASUNTO: RESCATE DE DOTE</span><span id="reloj">00:00:00</span></div>
 </header>
@@ -674,7 +674,6 @@ button:not(.secundario):hover::after{left:130%;}
   <h2>Caso cerrado.</h2>
   <p class="centro" style="font-family:'Archivo Black';font-size:1rem;">EL CANDADO SE ABRE CON:</p>
   <div class="final-codigo" id="codigo-final-vista"></div>
-  <p class="centro">Tiempo total de interrogatorio: <b id="tiempo-final"></b></p>
   <div class="carta">
     <p>Estanis, Andrea:</p>
     <p>Si estáis leyendo esto, habéis sobrevivido a dieciséis pruebas juntos sin pedir el divorcio, lo cual es estadísticamente prometedor.</p>
@@ -1084,8 +1083,6 @@ function comprobarFinal(){
 function finDelJuego(){
   sfxFanfarria();
   $("codigo-final-vista").textContent = CODIGO_FINAL.split("").join(" ");
-  const s = Math.floor((Date.now()-inicio)/1000);
-  $("tiempo-final").textContent = `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}min`;
   mostrarNivel(17);
   nivelActual = 17; pintarProgreso();
   document.querySelectorAll(".sello-mini").forEach(x=>x.classList.add("hecho"));
